@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require "net/http"
+begin
+  require "net/https"
+rescue LoadError
+  nil # net/https or openssl
+end if RUBY_VERSION < "1.9" # but only for 1.8
 
 # We can't use artifice here because it uses rack
 
