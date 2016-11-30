@@ -92,7 +92,14 @@ module Spec
         bundle_bin = "-S bundle"
       end
 
+      env = options.delete(:env) || {}
+      env["PATH"].gsub!("#{Path.root}/exe", "") if env["PATH"] && system_bundler
+
       requires = options.delete(:requires) || []
+      if RSpec.current_example.metadata[:realworld]
+        env["BUNDLER_SPEC_VCR_CASSETTE_NAME"] = RSpec.current_example.full_description
+        options[:artifice] ||= "vcr"
+      end
       requires << File.expand_path("../artifice/" + options.delete(:artifice) + ".rb", __FILE__) if options.key?(:artifice)
       requires << "support/hax"
       requires_str = requires.map {|r| "-r#{r}" }.join(" ")
@@ -102,8 +109,8 @@ module Spec
       load_path << spec
       load_path_str = "-I#{load_path.join(File::PATH_SEPARATOR)}"
 
-      env = (options.delete(:env) || {}).map {|k, v| "#{k}='#{v}'" }.join(" ")
-      env["PATH"].gsub!("#{Path.root}/exe", "") if env["PATH"] && system_bundler
+      env = env.map {|k, v| "#{k}=#{v.dump}" }.join(" ")
+
       args = options.map do |k, v|
         v == true ? " --#{k}" : " --#{k} #{v}" if v
       end.join
